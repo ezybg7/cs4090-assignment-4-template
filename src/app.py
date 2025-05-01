@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import uuid
 from datetime import datetime
 from tasks import load_tasks, save_tasks, filter_tasks_by_priority, filter_tasks_by_category
 
@@ -23,7 +24,7 @@ def main():
         
         if submit_button and task_title:
             new_task = {
-                "id": len(tasks) + 1,
+                "id": str(uuid.uuid4()),  # Generate a unique ID
                 "title": task_title,
                 "description": task_description,
                 "priority": task_priority,
@@ -34,7 +35,9 @@ def main():
             }
             tasks.append(new_task)
             save_tasks(tasks)
+            tasks = load_tasks()  # Reload tasks to reflect changes
             st.sidebar.success("Task added successfully!")
+            st.rerun()
     
     # Main area to display tasks
     st.header("Your Tasks")
@@ -56,6 +59,8 @@ def main():
         filtered_tasks = filter_tasks_by_priority(filtered_tasks, filter_priority)
     if not show_completed:
         filtered_tasks = [task for task in filtered_tasks if not task["completed"]]
+    if show_completed:
+        filtered_tasks = [task for task in filtered_tasks if task["completed"]]
     
     # Display tasks
     for task in filtered_tasks:
@@ -73,10 +78,12 @@ def main():
                     if t["id"] == task["id"]:
                         t["completed"] = not t["completed"]
                         save_tasks(tasks)
+                        tasks = load_tasks()  # Reload tasks to reflect changes
                         st.rerun()
             if st.button("Delete", key=f"delete_{task['id']}"):
                 tasks = [t for t in tasks if t["id"] != task["id"]]
                 save_tasks(tasks)
+                tasks = load_tasks()  # Reload tasks to reflect changes
                 st.rerun()
 
 if __name__ == "__main__":
